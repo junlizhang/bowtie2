@@ -26,6 +26,11 @@ bindir := $(prefix)/bin
 
 LDLIBS := -lz
 GCC_PREFIX := $(shell dirname `which gcc`)
+ifeq (ppc64le,$(shell uname -m))
+ifeq (,$(findstring at,$(GCC_PREFIX)))
+  $(error Needs advance tool chain >= 12.0-1 on ppc64le platform )
+endif
+endif
 GCC_SUFFIX :=
 CC ?= $(GCC_PREFIX)/gcc$(GCC_SUFFIX)
 CPP ?= $(GCC_PREFIX)/g++$(GCC_SUFFIX)
@@ -71,6 +76,9 @@ ifdef STATIC_BUILD
 endif
 
 POPCNT_CAPABILITY ?= 1
+ifeq (ppc64le,$(shell uname -m))
+  POPCNT_CAPABILITY=0
+endif
 ifeq (1, $(POPCNT_CAPABILITY))
 	CXXFLAGS += -DPOPCNT_CAPABILITY
 	CPPFLAGS += -I third_party
@@ -213,6 +221,9 @@ ifneq (,$(findstring AMD64,$(PROCESSOR_ARCHITEW6432)))
 		BITS := 64
 	endif
 endif
+ifeq (ppc64le,$(shell uname -m))
+  BITS=64
+endif
 ifeq (32,$(BITS))
   $(error bowtie2 compilation requires a 64-bit platform )
 endif
@@ -222,6 +233,9 @@ M64_FLAG := -m64
 ifeq (aarch64,$(shell uname -m))
 	SSE_FLAG =
 	M64_FLAG =
+endif
+ifeq (ppc64le,$(shell uname -m))
+  SSE_FLAG=-maltivec -mcpu=power8 -mtune=power9 -DNO_WARN_X86_INTRINSICS -Wno-narrowing
 endif
 
 DEBUG_FLAGS    := -O0 -g3 $(M64_FLAG) $(SSE_FLAG)
